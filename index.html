@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Recruitment Tracker — Amalga Group</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:         #0d1526;
+      --surface:    #141f38;
+      --card:       #1a2849;
+      --border:     #243060;
+      --accent:     #00c4a7;
+      --accent2:    #4f8ef7;
+      --text:       #dde4f5;
+      --muted:      #7a8db3;
+      --open:       #22c55e;
+      --hold:       #f59e0b;
+      --canceled:   #ef4444;
+      --font-head:  'Syne', sans-serif;
+      --font-body:  'DM Sans', sans-serif;
+      --font-mono:  'DM Mono', monospace;
+      --radius:     10px;
+      --shadow:     0 4px 24px rgba(0,0,0,.45);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 58px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 16px rgba(0,0,0,.4);
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-mark {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 16px;
+      color: #fff;
+    }
+    .header-brand h1 {
+      font-family: var(--font-head);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: .3px;
+    }
+    .header-brand span {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 400;
+      margin-left: 4px;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sync-note {
+      font-size: 11px;
+      color: var(--hold);
+      background: rgba(245,158,11,.1);
+      border: 1px solid rgba(245,158,11,.25);
+      border-radius: 6px;
+      padding: 4px 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 7px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all .15s;
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-accent {
+      background: var(--accent);
+      color: #0d1526;
+    }
+    .btn-accent:hover { filter: brightness(1.1); }
+    .btn-danger {
+      background: rgba(239,68,68,.12);
+      border: 1px solid rgba(239,68,68,.3);
+      color: var(--canceled);
+    }
+    .btn-danger:hover { background: rgba(239,68,68,.22); }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+    /* ── TABS ── */
+    .tabs-bar {
+      display: flex;
+      gap: 0;
+      padding: 0 28px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      padding: 14px 20px;
+      font-family: var(--font-head);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      user-select: none;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-badge {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1px 7px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .tab.active .tab-badge { background: rgba(0,196,167,.12); border-color: rgba(0,196,167,.3); color: var(--accent); }
+
+    /* ── MAIN ── */
+    .main { padding: 28px; max-width: 1200px; margin: 0 auto; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+    }
+    .section-title {
+      font-family: var(--font-head);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .section-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* ── FORM ── */
+    .form-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .form-col-full { grid-column: 1 / -1; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: .6px;
+      text-transform: uppercase;
+    }
+    .form-label .req { color: var(--accent); margin-left: 2px; }
+    .form-input, .form-select, .form-textarea {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 13.5px;
+      padding: 9px 13px;
+      transition: border-color .15s, box-shadow .15s;
+      outline: none;
+      width: 100%;
+    }
+    .form-input::placeholder { color: var(--muted); opacity: .7; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,196,167,.12);
+    }
+    .form-select option { background: var(--card); }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .url-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .url-input-wrapper .form-input { padding-right: 38px; font-family: var(--font-mono); font-size: 12px; }
+    .url-icon {
+      position: absolute;
+      right: 11px;
+      color: var(--muted);
+      cursor: default;
+      font-size: 15px;
+    }
+    .form-divider {
+      grid-column: 1 / -1;
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 4px 0;
+    }
+    .form-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 22px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── TABLE ── */
+    .table-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .table-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 7px 12px;
+      flex: 1;
+      max-width: 340px;
+    }
+    .search-box input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 13px;
+      width: 100%;
+    }
+    .search-box input::placeholder { color: var(--muted); }
+    .search-box svg { color: var(--muted); flex-shrink: 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    thead th {
+      background: var(--surface);
+      padding: 10px 16px;
+      text-align: left;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+    thead th:hover { color: var(--accent); }
+    thead th .sort-icon { margin-left: 4px; opacity: .4; }
+    thead th.sorted .sort-icon { opacity: 1; color: var(--accent); }
+    tbody tr {
+      border-bottom: 1px solid rgba(36,48,96,.6);
+      transition: background .1s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,.025); }
+    tbody td {
+      padding: 11px 16px;
+      font-size: 13px;
+      color: var(--text);
+      vertical-align: middle;
+    }
+    .cell-mono { font-family: var(--font-mono); font-size: 12px; }
+    .cell-muted { color: var(--muted); font-size: 12px; }
+    .cell-link {
+      color: var(--accent2);
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .cell-link:hover { text-decoration: underline; }
+    .empty-state {
+      padding: 52px 0;
+      text-align: center;
+      color: var(--muted);
+    }
+    .empty-state svg { margin-bottom: 12px; opacity: .4; }
+    .empty-state p { font-size: 13px; }
+
+    /* ── STATUS BADGES ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      letter-spacing: .3px;
+      white-space: nowrap;
+    }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .badge-open    { background: rgba(34,197,94,.12);  color: var(--open);     border: 1px solid rgba(34,197,94,.25); }
+    .badge-hold    { background: rgba(245,158,11,.12); color: var(--hold);     border: 1px solid rgba(245,158,11,.25); }
+    .badge-canceled{ background: rgba(239,68,68,.12); color: var(--canceled); border: 1px solid rgba(239,68,68,.25); }
+    .badge-dot-open     { background: var(--open); }
+    .badge-dot-hold     { background: var(--hold); }
+    .badge-dot-canceled { background: var(--canceled); }
+
+    .badge-source {
+      background: rgba(79,142,247,.1);
+      color: var(--accent2);
+      border: 1px solid rgba(79,142,247,.2);
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.65);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 540px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+      animation: modalIn .18s ease;
+    }
+    @keyframes modalIn {
+      from { transform: translateY(12px) scale(.98); opacity: 0; }
+      to   { transform: none; opacity: 1; }
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-title { font-family: var(--font-head); font-size: 16px; font-weight: 700; }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: color .12s;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-body { padding: 22px; }
+    .modal-footer {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      padding: 16px 22px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── TOAST ── */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 11px 16px;
+      font-size: 13px;
+      color: var(--text);
+      box-shadow: 0 8px 30px rgba(0,0,0,.4);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toastIn .2s ease;
+      max-width: 320px;
+    }
+    @keyframes toastIn { from { transform: translateX(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .toast-icon-ok  { color: var(--open); font-size: 16px; }
+    .toast-icon-err { color: var(--canceled); font-size: 16px; }
+
+    /* ── CANDIDATE DETAIL ── */
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .detail-item label {
+      display: block;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: .6px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .detail-item p { font-size: 13px; color: var(--text); }
+    .detail-item.full { grid-column: 1 / -1; }
+
+    /* ── JOB CODE FORM INLINE ── */
+    .inline-form {
+      background: rgba(0,196,167,.05);
+      border: 1px dashed rgba(0,196,167,.25);
+      border-radius: 9px;
+      padding: 20px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .inline-form.open { display: block; }
+
+    /* ── FILTER ROW ── */
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .filter-chip {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      background: transparent;
+      transition: all .12s;
+    }
+    .filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-chip.active { background: rgba(0,196,167,.12); border-color: rgba(0,196,167,.4); color: var(--accent); }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+    }
+    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; margin-bottom: 6px; }
+    .stat-value { font-family: var(--font-head); font-size: 26px; font-weight: 700; }
+    .stat-value.green { color: var(--open); }
+    .stat-value.amber { color: var(--hold); }
+    .stat-value.red   { color: var(--canceled); }
+
+    @media (max-width: 700px) {
+      .form-grid, .form-grid.cols-3 { grid-template-columns: 1fr; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .table-toolbar { flex-direction: column; align-items: flex-start; }
+      header { padding: 0 16px; }
+      .main { padding: 16px; }
+      .sync-note { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-brand">
+    <div class="logo-mark">A</div>
+    <div>
+      <h1>Recruitment Tracker <span>/ Amalga Group</span></h1>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="sync-note">
+      ⚡ Local storage — use Export/Import to sync with teammates
+    </div>
+    <button class="btn btn-ghost" onclick="exportData()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export
+    </button>
+    <label class="btn btn-ghost" style="cursor:pointer;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Import
+      <input type="file" accept=".json" onchange="importData(event)" style="display:none"/>
+    </label>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs-bar">
+  <div class="tab active" onclick="switchTab('add')" id="tab-add">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    New Candidate
+  </div>
+  <div class="tab" onclick="switchTab('history')" id="tab-history">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Candidates
+    <span class="tab-badge" id="badge-candidates">0</span>
+  </div>
+  <div class="tab" onclick="switchTab('jobs')" id="tab-jobs">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+    Job Codes
+    <span class="tab-badge" id="badge-jobs">0</span>
+  </div>
+</div>
+
+<!-- ═══════════ TAB: ADD CANDIDATE ═══════════ -->
+<div class="main">
+  <div class="tab-panel active" id="panel-add">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Add New Candidate</div>
+        <div class="section-sub">Fill in all required fields and submit to record the candidate.</div>
+      </div>
+    </div>
+    <div class="form-card">
+      <div class="form-grid">
+
+        <!-- Job Code -->
+        <div class="form-group">
+          <label class="form-label">Job Code <span class="req">*</span></label>
+          <select id="f-jobcode" class="form-select">
+            <option value="">— Select job code —</option>
+          </select>
+        </div>
+
+        <!-- Candidate Name -->
+        <div class="form-group">
+          <label class="form-label">Candidate Name <span class="req">*</span></label>
+          <input id="f-name" type="text" class="form-input" placeholder="Full name"/>
+        </div>
+
+        <hr class="form-divider"/>
+
+        <!-- Country -->
+        <div class="form-group">
+          <label class="form-label">Country <span class="req">*</span></label>
+          <input id="f-country" type="text" class="form-input" placeholder="e.g. Mexico"/>
+        </div>
+
+        <!-- State -->
+        <div class="form-group">
+          <label class="form-label">State / Province</label>
+          <input id="f-state" type="text" class="form-input" placeholder="e.g. Nuevo León"/>
+        </div>
+
+        <!-- City -->
+        <div class="form-group">
+          <label class="form-label">City</label>
+          <input id="f-city" type="text" class="form-input" placeholder="e.g. Monterrey"/>
+        </div>
+
+        <!-- Source -->
+        <div class="form-group">
+          <label class="form-label">Source <span class="req">*</span></label>
+          <select id="f-source" class="form-select">
+            <option value="">— Select source —</option>
+            <option value="LinkedIn">LinkedIn</option>
+            <option value="OCC">OCC Mundial</option>
+            <option value="Referral">Employee Referral</option>
+            <option value="Indeed">Indeed</option>
+            <option value="Computrabajo">Computrabajo</option>
+            <option value="Internal">Internal Promotion</option>
+            <option value="Agency">Staffing Agency</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <hr class="form-divider"/>
+
+        <!-- Google Drive URL -->
+        <div class="form-group form-col-full">
+          <label class="form-label">Google Drive File URL (Resume / CV)</label>
+          <div class="url-input-wrapper">
+            <input id="f-driveurl" type="url" class="form-input" placeholder="Paste Google Drive link here…"/>
+            <span class="url-icon">🔗</span>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group form-col-full">
+          <label class="form-label">Notes</label>
+          <textarea id="f-notes" class="form-textarea" placeholder="Interview notes, recruiter observations, next steps…"></textarea>
+        </div>
+
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-ghost" onclick="resetForm()">Clear</button>
+        <button class="btn btn-accent" onclick="submitCandidate()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Save Candidate
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB: CANDIDATE HISTORY ═══════════ -->
+  <div class="tab-panel" id="panel-history">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Candidate History</div>
+        <div class="section-sub">All recorded candidates. Click a row to view details.</div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row" id="cand-stats">
+      <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value" id="stat-total">0</div></div>
+      <div class="stat-card"><div class="stat-label">This Week</div><div class="stat-value" id="stat-week">0</div></div>
+      <div class="stat-card"><div class="stat-label">With Drive File</div><div class="stat-value green" id="stat-files">0</div></div>
+      <div class="stat-card"><div class="stat-label">Job Codes Active</div><div class="stat-value amber" id="stat-activejobs">0</div></div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-toolbar">
+        <div class="search-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="cand-search" type="text" placeholder="Search by name, job code, source…" oninput="renderCandidates()"/>
+        </div>
+        <div class="filter-row">
+          <button class="filter-chip active" data-src="all" onclick="setSourceFilter(this)">All Sources</button>
+          <button class="filter-chip" data-src="LinkedIn" onclick="setSourceFilter(this)">LinkedIn</button>
+          <button class="filter-chip" data-src="OCC" onclick="setSourceFilter(this)">OCC</button>
+          <button class="filter-chip" data-src="Referral" onclick="setSourceFilter(this)">Referral</button>
+          <button class="filter-chip" data-src="Indeed" onclick="setSourceFilter(this)">Indeed</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="sortCandidates('jobCode')">JOB CODE <span class="sort-icon">↕</span></th>
+              <th onclick="sortCandidates('name')">CANDIDATE <span class="sort-icon">↕</span></th>
+              <th>LOCATION</th>
+              <th onclick="sortCandidates('source')">SOURCE <span class="sort-icon">↕</span></th>
+              <th>DRIVE FILE</th>
+              <th onclick="sortCandidates('date')">DATE <span class="sort-icon">↕</span></th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="cand-tbody">
+            <tr><td colspan="7"><div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>No candidates yet. Add one from the New Candidate tab.</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB: JOB CODES ═══════════ -->
+  <div class="tab-panel" id="panel-jobs">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Job Codes</div>
+        <div class="section-sub">Manage open positions. Only Open jobs appear in the candidate form.</div>
+      </div>
+      <button class="btn btn-accent" onclick="toggleJobForm()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Job Code
+      </button>
+    </div>
+
+    <!-- Inline add form -->
+    <div class="inline-form" id="job-form">
+      <div class="form-grid cols-3" style="margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label">Job Code <span class="req">*</span></label>
+          <input id="j-code" type="text" class="form-input" placeholder="e.g. OPS-2026-04"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Job Title <span class="req">*</span></label>
+          <input id="j-title" type="text" class="form-input" placeholder="e.g. BPO Team Lead"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <input id="j-dept" type="text" class="form-input" placeholder="e.g. Operations"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status <span class="req">*</span></label>
+          <select id="j-status" class="form-select" onchange="toggleCancelReason()">
+            <option value="Open">Open</option>
+            <option value="On Hold">On Hold</option>
+            <option value="Canceled">Canceled</option>
+          </select>
+        </div>
+        <div class="form-group" id="j-cancel-wrap" style="display:none; grid-column: span 2;">
+          <label class="form-label">Cancellation Reason <span class="req">*</span></label>
+          <input id="j-cancel" type="text" class="form-input" placeholder="Explain why this position was canceled…"/>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="toggleJobForm()">Cancel</button>
+        <button class="btn btn-accent" onclick="submitJobCode()">Save Job Code</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-toolbar">
+        <div class="search-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="job-search" type="text" placeholder="Search job codes or titles…" oninput="renderJobCodes()"/>
+        </div>
+        <div class="filter-row">
+          <button class="filter-chip active" data-jst="all" onclick="setJobFilter(this)">All</button>
+          <button class="filter-chip" data-jst="Open" onclick="setJobFilter(this)">Open</button>
+          <button class="filter-chip" data-jst="On Hold" onclick="setJobFilter(this)">On Hold</button>
+          <button class="filter-chip" data-jst="Canceled" onclick="setJobFilter(this)">Canceled</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>JOB CODE</th>
+              <th>TITLE</th>
+              <th>DEPARTMENT</th>
+              <th>STATUS</th>
+              <th>CANCEL REASON</th>
+              <th>CANDIDATES</th>
+              <th>CREATED</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="jobs-tbody">
+            <tr><td colspan="8"><div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><p>No job codes yet. Click "Add Job Code" to get started.</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ CANDIDATE DETAIL MODAL ═══════════ -->
+<div class="modal-overlay" id="modal-candidate">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-cand-title">Candidate Details</div>
+      <button class="modal-close" onclick="closeModal('modal-candidate')">✕</button>
+    </div>
+    <div class="modal-body" id="modal-cand-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" id="modal-cand-delete" onclick="deleteCandidate()">Delete Record</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-candidate')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ JOB EDIT MODAL ═══════════ -->
+<div class="modal-overlay" id="modal-job">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Edit Job Code</div>
+      <button class="modal-close" onclick="closeModal('modal-job')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ej-id"/>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Job Code</label>
+          <input id="ej-code" type="text" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Job Title</label>
+          <input id="ej-title" type="text" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <input id="ej-dept" type="text" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select id="ej-status" class="form-select" onchange="toggleEditCancelReason()">
+            <option value="Open">Open</option>
+            <option value="On Hold">On Hold</option>
+            <option value="Canceled">Canceled</option>
+          </select>
+        </div>
+        <div class="form-group form-col-full" id="ej-cancel-wrap" style="display:none;">
+          <label class="form-label">Cancellation Reason <span class="req">*</span></label>
+          <input id="ej-cancel" type="text" class="form-input"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" id="modal-job-delete" onclick="deleteJobCode()">Delete</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-job')">Cancel</button>
+      <button class="btn btn-accent btn-sm" onclick="saveJobEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toasts"></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  DATA LAYER
+// ═══════════════════════════════════════════
+const DB = {
+  candidates: [],
+  jobs: [],
+};
+
+function load() {
+  try {
+    const raw = localStorage.getItem('amalga_recruit_v2');
+    if (raw) Object.assign(DB, JSON.parse(raw));
+  } catch(e) {}
+}
+function save() {
+  localStorage.setItem('amalga_recruit_v2', JSON.stringify(DB));
+  updateBadges();
+}
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+// ═══════════════════════════════════════════
+//  TAB SWITCHING
+// ═══════════════════════════════════════════
+let currentTab = 'add';
+function switchTab(name) {
+  currentTab = name;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+  if (name === 'history') { renderCandidates(); updateStats(); }
+  if (name === 'jobs')    { renderJobCodes(); }
+  if (name === 'add')     { populateJobDropdown(); }
+}
+
+function updateBadges() {
+  document.getElementById('badge-candidates').textContent = DB.candidates.length;
+  document.getElementById('badge-jobs').textContent = DB.jobs.length;
+}
+
+// ═══════════════════════════════════════════
+//  CANDIDATE FORM
+// ═══════════════════════════════════════════
+function populateJobDropdown() {
+  const sel = document.getElementById('f-jobcode');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Select job code —</option>';
+  DB.jobs.filter(j => j.status === 'Open').forEach(j => {
+    const o = document.createElement('option');
+    o.value = j.code;
+    o.textContent = `${j.code} — ${j.title}`;
+    if (j.code === cur) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function submitCandidate() {
+  const jobCode = document.getElementById('f-jobcode').value.trim();
+  const name    = document.getElementById('f-name').value.trim();
+  const country = document.getElementById('f-country').value.trim();
+  const state   = document.getElementById('f-state').value.trim();
+  const city    = document.getElementById('f-city').value.trim();
+  const source  = document.getElementById('f-source').value;
+  const driveUrl= document.getElementById('f-driveurl').value.trim();
+  const notes   = document.getElementById('f-notes').value.trim();
+
+  if (!jobCode) return toast('Please select a job code.', 'err');
+  if (!name)    return toast('Candidate name is required.', 'err');
+  if (!country) return toast('Country is required.', 'err');
+  if (!source)  return toast('Please select a source.', 'err');
+
+  const cand = {
+    id: uid(),
+    jobCode, name,
+    country, state, city,
+    source, driveUrl, notes,
+    date: new Date().toISOString(),
+  };
+  DB.candidates.unshift(cand);
+  save();
+  resetForm();
+  toast(`✓ ${name} added successfully.`, 'ok');
+  updateBadges();
+}
+
+function resetForm() {
+  ['f-jobcode','f-name','f-country','f-state','f-city','f-source','f-driveurl','f-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el.tagName === 'SELECT') el.value = '';
+    else el.value = '';
+  });
+}
+
+// ═══════════════════════════════════════════
+//  CANDIDATE TABLE
+// ═══════════════════════════════════════════
+let candSortKey = 'date';
+let candSortDir = -1;
+let sourceFilter = 'all';
+
+function setSourceFilter(btn) {
+  document.querySelectorAll('.filter-chip[data-src]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  sourceFilter = btn.dataset.src;
+  renderCandidates();
+}
+
+function sortCandidates(key) {
+  if (candSortKey === key) candSortDir *= -1;
+  else { candSortKey = key; candSortDir = 1; }
+  renderCandidates();
+}
+
+function renderCandidates() {
+  const q = document.getElementById('cand-search').value.toLowerCase();
+  let list = DB.candidates.filter(c => {
+    const matchSrc = sourceFilter === 'all' || c.source === sourceFilter;
+    const matchQ   = !q || [c.name, c.jobCode, c.source, c.country, c.city].join(' ').toLowerCase().includes(q);
+    return matchSrc && matchQ;
+  });
+  list.sort((a, b) => {
+    let va = a[candSortKey] || ''; let vb = b[candSortKey] || '';
+    return va < vb ? -candSortDir : va > vb ? candSortDir : 0;
+  });
+  const tbody = document.getElementById('cand-tbody');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>No candidates match your filters.</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(c => {
+    const loc = [c.city, c.state, c.country].filter(Boolean).join(', ');
+    const date = new Date(c.date).toLocaleDateString('en-MX', {day:'2-digit',month:'short',year:'numeric'});
+    const driveCell = c.driveUrl
+      ? `<a class="cell-link" href="${escHref(c.driveUrl)}" target="_blank" rel="noopener">🔗 Open File</a>`
+      : `<span class="cell-muted">—</span>`;
+    return `<tr onclick="viewCandidate('${c.id}')" style="cursor:pointer;">
+      <td><span class="badge badge-source cell-mono">${esc(c.jobCode)}</span></td>
+      <td><strong>${esc(c.name)}</strong></td>
+      <td class="cell-muted">${esc(loc)}</td>
+      <td>${sourceBadge(c.source)}</td>
+      <td onclick="event.stopPropagation()">${driveCell}</td>
+      <td class="cell-muted">${date}</td>
+      <td onclick="event.stopPropagation()">
+        <button class="btn btn-ghost btn-sm" onclick="viewCandidate('${c.id}')">View</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function sourceBadge(src) {
+  const colors = {LinkedIn:'#0077b5', OCC:'#e84b32', Referral:'#7c3aed', Indeed:'#2164f3', Computrabajo:'#ff6800', Internal:'var(--open)', Agency:'var(--hold)'};
+  const col = colors[src] || 'var(--muted)';
+  return `<span style="background:${col}20;color:${col};border:1px solid ${col}40;" class="badge">${esc(src || '—')}</span>`;
+}
+
+// ═══════════════════════════════════════════
+//  CANDIDATE DETAIL MODAL
+// ═══════════════════════════════════════════
+let activeCandId = null;
+function viewCandidate(id) {
+  activeCandId = id;
+  const c = DB.candidates.find(x => x.id === id);
+  if (!c) return;
+  const loc = [c.city, c.state, c.country].filter(Boolean).join(', ');
+  const date = new Date(c.date).toLocaleString('en-MX');
+  const driveHtml = c.driveUrl
+    ? `<a class="cell-link" href="${escHref(c.driveUrl)}" target="_blank" rel="noopener" style="font-size:13px;">🔗 Open in Google Drive</a>`
+    : '<span class="cell-muted">No file attached</span>';
+  document.getElementById('modal-cand-title').textContent = c.name;
+  document.getElementById('modal-cand-body').innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-item"><label>Job Code</label><p class="cell-mono">${esc(c.jobCode)}</p></div>
+      <div class="detail-item"><label>Source</label><p>${sourceBadge(c.source)}</p></div>
+      <div class="detail-item full"><label>Location</label><p>${esc(loc) || '—'}</p></div>
+      <div class="detail-item full"><label>Drive File</label><p>${driveHtml}</p></div>
+      <div class="detail-item full"><label>Notes</label><p style="white-space:pre-wrap;color:var(--muted);">${esc(c.notes) || '—'}</p></div>
+      <div class="detail-item"><label>Recorded On</label><p class="cell-muted" style="font-size:12px;">${date}</p></div>
+      <div class="detail-item"><label>Record ID</label><p class="cell-mono" style="font-size:11px;color:var(--muted);">${c.id}</p></div>
+    </div>`;
+  openModal('modal-candidate');
+}
+
+function deleteCandidate() {
+  if (!activeCandId) return;
+  const c = DB.candidates.find(x => x.id === activeCandId);
+  if (!confirm(`Delete ${c?.name}? This cannot be undone.`)) return;
+  DB.candidates = DB.candidates.filter(x => x.id !== activeCandId);
+  save(); renderCandidates(); updateStats();
+  closeModal('modal-candidate');
+  toast('Candidate record deleted.', 'ok');
+}
+
+// ═══════════════════════════════════════════
+//  STATS
+// ═══════════════════════════════════════════
+function updateStats() {
+  const now = Date.now();
+  const weekAgo = now - 7*24*60*60*1000;
+  document.getElementById('stat-total').textContent  = DB.candidates.length;
+  document.getElementById('stat-week').textContent   = DB.candidates.filter(c => new Date(c.date) > weekAgo).length;
+  document.getElementById('stat-files').textContent  = DB.candidates.filter(c => c.driveUrl).length;
+  document.getElementById('stat-activejobs').textContent = DB.jobs.filter(j => j.status === 'Open').length;
+}
+
+// ═══════════════════════════════════════════
+//  JOB CODES
+// ═══════════════════════════════════════════
+let jobFilter = 'all';
+let editingJobId = null;
+
+function toggleJobForm() {
+  const f = document.getElementById('job-form');
+  f.classList.toggle('open');
+  if (f.classList.contains('open')) {
+    document.getElementById('j-code').focus();
+  } else {
+    clearJobForm();
+  }
+}
+
+function clearJobForm() {
+  ['j-code','j-title','j-dept','j-cancel'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('j-status').value = 'Open';
+  document.getElementById('j-cancel-wrap').style.display = 'none';
+}
+
+function toggleCancelReason() {
+  const status = document.getElementById('j-status').value;
+  document.getElementById('j-cancel-wrap').style.display = status === 'Canceled' ? 'block' : 'none';
+}
+
+function toggleEditCancelReason() {
+  const status = document.getElementById('ej-status').value;
+  document.getElementById('ej-cancel-wrap').style.display = status === 'Canceled' ? 'block' : 'none';
+}
+
+function submitJobCode() {
+  const code   = document.getElementById('j-code').value.trim();
+  const title  = document.getElementById('j-title').value.trim();
+  const dept   = document.getElementById('j-dept').value.trim();
+  const status = document.getElementById('j-status').value;
+  const cancel = document.getElementById('j-cancel').value.trim();
+
+  if (!code)  return toast('Job Code is required.', 'err');
+  if (!title) return toast('Job Title is required.', 'err');
+  if (status === 'Canceled' && !cancel) return toast('Please enter a cancellation reason.', 'err');
+  if (DB.jobs.find(j => j.code.toLowerCase() === code.toLowerCase()))
+    return toast(`Job code "${code}" already exists.`, 'err');
+
+  DB.jobs.unshift({ id: uid(), code, title, dept, status, cancelReason: cancel, date: new Date().toISOString() });
+  save(); renderJobCodes(); populateJobDropdown();
+  toggleJobForm();
+  toast(`Job code ${code} added.`, 'ok');
+}
+
+function setJobFilter(btn) {
+  document.querySelectorAll('.filter-chip[data-jst]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  jobFilter = btn.dataset.jst;
+  renderJobCodes();
+}
+
+function renderJobCodes() {
+  const q = document.getElementById('job-search').value.toLowerCase();
+  let list = DB.jobs.filter(j => {
+    const matchStatus = jobFilter === 'all' || j.status === jobFilter;
+    const matchQ = !q || [j.code, j.title, j.dept].join(' ').toLowerCase().includes(q);
+    return matchStatus && matchQ;
+  });
+  const tbody = document.getElementById('jobs-tbody');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><p>No job codes match your filters.</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(j => {
+    const candCount = DB.candidates.filter(c => c.jobCode === j.code).length;
+    const date = new Date(j.date).toLocaleDateString('en-MX',{day:'2-digit',month:'short',year:'numeric'});
+    const cancelCell = j.status === 'Canceled'
+      ? `<span style="font-size:12px;color:var(--muted);">${esc(j.cancelReason)}</span>`
+      : `<span class="cell-muted">—</span>`;
+    return `<tr>
+      <td class="cell-mono"><strong>${esc(j.code)}</strong></td>
+      <td>${esc(j.title)}</td>
+      <td class="cell-muted">${esc(j.dept) || '—'}</td>
+      <td>${statusBadge(j.status)}</td>
+      <td>${cancelCell}</td>
+      <td style="text-align:center;"><span class="badge badge-source">${candCount}</span></td>
+      <td class="cell-muted">${date}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="editJob('${j.id}')">Edit</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function statusBadge(status) {
+  const cls = { Open:'badge-open', 'On Hold':'badge-hold', Canceled:'badge-canceled' }[status] || '';
+  const dotCls = { Open:'badge-dot-open', 'On Hold':'badge-dot-hold', Canceled:'badge-dot-canceled' }[status] || '';
+  return `<span class="badge ${cls}"><span class="badge-dot ${dotCls}"></span>${status}</span>`;
+}
+
+function editJob(id) {
+  editingJobId = id;
+  const j = DB.jobs.find(x => x.id === id);
+  if (!j) return;
+  document.getElementById('ej-id').value = id;
+  document.getElementById('ej-code').value  = j.code;
+  document.getElementById('ej-title').value = j.title;
+  document.getElementById('ej-dept').value  = j.dept || '';
+  document.getElementById('ej-status').value= j.status;
+  document.getElementById('ej-cancel').value= j.cancelReason || '';
+  document.getElementById('ej-cancel-wrap').style.display = j.status === 'Canceled' ? 'block' : 'none';
+  openModal('modal-job');
+}
+
+function saveJobEdit() {
+  const id     = document.getElementById('ej-id').value;
+  const code   = document.getElementById('ej-code').value.trim();
+  const title  = document.getElementById('ej-title').value.trim();
+  const dept   = document.getElementById('ej-dept').value.trim();
+  const status = document.getElementById('ej-status').value;
+  const cancel = document.getElementById('ej-cancel').value.trim();
+
+  if (!code || !title) return toast('Code and Title are required.', 'err');
+  if (status === 'Canceled' && !cancel) return toast('Cancellation reason is required.', 'err');
+
+  const j = DB.jobs.find(x => x.id === id);
+  if (!j) return;
+  Object.assign(j, { code, title, dept, status, cancelReason: cancel });
+  save(); renderJobCodes(); populateJobDropdown();
+  closeModal('modal-job');
+  toast('Job code updated.', 'ok');
+}
+
+function deleteJobCode() {
+  if (!editingJobId) return;
+  const j = DB.jobs.find(x => x.id === editingJobId);
+  const linked = DB.candidates.filter(c => c.jobCode === j?.code).length;
+  if (linked > 0) {
+    if (!confirm(`This job code has ${linked} candidate(s) linked to it. Delete anyway?`)) return;
+  } else {
+    if (!confirm(`Delete job code "${j?.code}"?`)) return;
+  }
+  DB.jobs = DB.jobs.filter(x => x.id !== editingJobId);
+  save(); renderJobCodes(); populateJobDropdown();
+  closeModal('modal-job');
+  toast('Job code deleted.', 'ok');
+}
+
+// ═══════════════════════════════════════════
+//  MODALS
+// ═══════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+});
+
+// ═══════════════════════════════════════════
+//  EXPORT / IMPORT
+// ═══════════════════════════════════════════
+function exportData() {
+  const blob = new Blob([JSON.stringify(DB, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `amalga-recruit-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Data exported successfully.', 'ok');
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const parsed = JSON.parse(ev.target.result);
+      if (!parsed.candidates || !parsed.jobs) throw new Error('Invalid format');
+      if (!confirm(`Import will REPLACE current data.\n• ${parsed.candidates.length} candidates\n• ${parsed.jobs.length} job codes\n\nProceed?`)) return;
+      DB.candidates = parsed.candidates;
+      DB.jobs = parsed.jobs;
+      save();
+      if (currentTab === 'history') { renderCandidates(); updateStats(); }
+      if (currentTab === 'jobs')    renderJobCodes();
+      populateJobDropdown();
+      updateBadges();
+      toast(`Imported: ${DB.candidates.length} candidates, ${DB.jobs.length} jobs.`, 'ok');
+    } catch {
+      toast('Import failed — invalid file.', 'err');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ═══════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════
+function toast(msg, type = 'ok') {
+  const icon = type === 'ok' ? '✓' : '✕';
+  const cls  = type === 'ok' ? 'toast-icon-ok' : 'toast-icon-err';
+  const el   = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<span class="${cls}">${icon}</span> <span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ═══════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escHref(url) {
+  if (!url) return '#';
+  // Only allow http/https
+  return /^https?:\/\//i.test(url) ? url.replace(/"/g,'%22') : '#';
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+load();
+populateJobDropdown();
+updateBadges();
+</script>
+</body>
+</html>
