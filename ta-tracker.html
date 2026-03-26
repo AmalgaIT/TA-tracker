@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TA Candidate Tracker · Amalga Group</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #F2F5FA;
+      --surface: #FFFFFF;
+      --surface2: #F7F9FC;
+      --primary: #1A3D6B;
+      --primary-light: #2457A0;
+      --accent: #0BAFB8;
+      --accent2: #0891B2;
+      --green: #059669;
+      --green-light: #D1FAE5;
+      --amber: #D97706;
+      --amber-light: #FEF3C7;
+      --red: #DC2626;
+      --red-light: #FEE2E2;
+      --border: #DDE3ED;
+      --border2: #C8D1E0;
+      --text: #0F1C2E;
+      --text2: #4A5568;
+      --text3: #8896AB;
+      --shadow-sm: 0 1px 3px rgba(26,61,107,0.08), 0 1px 2px rgba(26,61,107,0.04);
+      --shadow: 0 4px 16px rgba(26,61,107,0.10), 0 1px 4px rgba(26,61,107,0.06);
+      --shadow-lg: 0 10px 40px rgba(26,61,107,0.14), 0 4px 12px rgba(26,61,107,0.08);
+      --radius: 10px;
+      --radius-sm: 6px;
+      --radius-lg: 16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    /* ── SETUP MODAL ─────────────────────────── */
+    .setup-overlay {
+      position: fixed; inset: 0;
+      background: rgba(10,22,40,0.55);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .setup-overlay.hidden { display: none; }
+    .setup-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      width: 540px;
+      max-width: 95vw;
+      overflow: hidden;
+    }
+    .setup-header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      padding: 28px 32px;
+      color: #fff;
+    }
+    .setup-header h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .setup-header p { font-size: 13px; opacity: 0.75; }
+    .setup-body { padding: 28px 32px; }
+    .setup-step {
+      display: flex; gap: 14px; margin-bottom: 18px; align-items: flex-start;
+    }
+    .step-num {
+      min-width: 26px; height: 26px;
+      background: var(--accent);
+      color: #fff; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; margin-top: 2px;
+    }
+    .step-content { flex: 1; }
+    .step-content strong { font-weight: 600; color: var(--text); }
+    .step-content p { font-size: 12.5px; color: var(--text2); margin-top: 3px; line-height: 1.5; }
+    .step-content a { color: var(--accent2); text-decoration: none; }
+    .step-content a:hover { text-decoration: underline; }
+    .setup-fields { margin-top: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .setup-fields label { font-size: 12px; font-weight: 600; color: var(--text2); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .setup-fields input {
+      width: 100%; padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'DM Mono', monospace;
+      font-size: 12.5px; color: var(--text);
+      background: var(--surface2);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .setup-fields input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(11,175,184,0.15); }
+    .setup-footer { padding: 0 32px 28px; }
+    .btn-primary {
+      width: 100%; padding: 13px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: #fff; border: none; border-radius: var(--radius-sm);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    /* ── APP SHELL ───────────────────────────── */
+    #app { display: none; flex-direction: column; min-height: 100vh; }
+    #app.ready { display: flex; }
+
+    /* Header */
+    .app-header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      padding: 0 32px;
+      height: 62px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 2px 12px rgba(26,61,107,0.2);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .app-logo {
+      font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.5px;
+    }
+    .app-logo span { color: var(--accent); }
+    .header-badge {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.8);
+    }
+    .header-right { display: flex; align-items: center; gap: 14px; }
+    .sync-indicator {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: rgba(255,255,255,0.7);
+    }
+    .sync-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent); animation: pulse 2s infinite;
+    }
+    .sync-dot.syncing { background: var(--amber); animation: spin 1s linear infinite; }
+    .sync-dot.error { background: var(--red); animation: none; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    .btn-icon {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: var(--radius-sm);
+      color: #fff; padding: 6px 12px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: background 0.2s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .btn-icon:hover { background: rgba(255,255,255,0.22); }
+    .user-chip {
+      background: rgba(255,255,255,0.15);
+      border-radius: 20px; padding: 4px 12px;
+      font-size: 12px; font-weight: 600; color: #fff;
+    }
+
+    /* Nav Tabs */
+    .app-nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      display: flex; align-items: center; gap: 4px;
+      box-shadow: var(--shadow-sm);
+    }
+    .nav-tab {
+      padding: 14px 18px;
+      font-size: 13.5px; font-weight: 500;
+      color: var(--text2); cursor: pointer;
+      border-bottom: 2.5px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+      white-space: nowrap;
+    }
+    .nav-tab:hover { color: var(--primary); }
+    .nav-tab.active { color: var(--primary); border-bottom-color: var(--accent); font-weight: 600; }
+    .nav-spacer { flex: 1; }
+    .record-count-badge {
+      background: var(--accent);
+      color: #fff; border-radius: 20px;
+      padding: 2px 8px; font-size: 11px; font-weight: 600;
+      margin-left: 6px;
+    }
+
+    /* Content area */
+    .app-content { flex: 1; padding: 28px 32px; max-width: 1100px; margin: 0 auto; width: 100%; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ── FORM CARD ───────────────────────────── */
+    .form-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .form-card-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .form-card-title {
+      font-size: 15px; font-weight: 700; color: var(--primary);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .form-card-title .icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .form-card-title .icon svg { width: 15px; height: 15px; fill: #fff; }
+    .form-body { padding: 24px; }
+
+    /* Form grid */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .form-grid .span2 { grid-column: span 2; }
+    .form-grid .span3 { grid-column: span 3; }
+    .form-section-label {
+      grid-column: span 3;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.8px; color: var(--text3);
+      padding-bottom: 6px; border-bottom: 1px solid var(--border);
+      margin-top: 4px;
+    }
+
+    /* Fields */
+    .field { display: flex; flex-direction: column; gap: 6px; position: relative; }
+    .field label {
+      font-size: 12px; font-weight: 600; color: var(--text2);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .field label .req { color: var(--red); font-size: 11px; }
+    .field input, .field select, .field textarea {
+      padding: 10px 13px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13.5px; color: var(--text);
+      background: var(--surface2);
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      width: 100%;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(11,175,184,0.12);
+    }
+    .field select { cursor: pointer; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238896AB' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+    .field textarea { resize: vertical; min-height: 70px; }
+
+    /* Status badge */
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 8px; border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+    }
+    .status-active { background: #DBEAFE; color: #1D4ED8; }
+    .status-interview { background: var(--amber-light); color: var(--amber); }
+    .status-hired { background: var(--green-light); color: var(--green); }
+    .status-declined { background: var(--red-light); color: var(--red); }
+    .status-onhold { background: #F3F4F6; color: #6B7280; }
+
+    /* Autocomplete dropdown */
+    .autocomplete-list {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: var(--surface); border: 1.5px solid var(--accent);
+      border-radius: var(--radius-sm); z-index: 200;
+      max-height: 180px; overflow-y: auto;
+      box-shadow: var(--shadow);
+    }
+    .autocomplete-list.hidden { display: none; }
+    .autocomplete-item {
+      padding: 9px 13px; cursor: pointer;
+      font-size: 13px; color: var(--text);
+      transition: background 0.15s;
+      border-bottom: 1px solid var(--border);
+    }
+    .autocomplete-item:last-child { border-bottom: none; }
+    .autocomplete-item:hover, .autocomplete-item.selected { background: #EFF7F8; color: var(--primary); }
+    .autocomplete-item mark { background: none; color: var(--accent2); font-weight: 600; }
+
+    /* Form actions */
+    .form-actions {
+      display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px;
+      padding-top: 18px; border-top: 1px solid var(--border);
+    }
+    .btn-secondary {
+      padding: 10px 20px;
+      background: var(--surface2); border: 1.5px solid var(--border2);
+      border-radius: var(--radius-sm); color: var(--text2);
+      font-family: 'Outfit', sans-serif; font-size: 13.5px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-secondary:hover { background: var(--border); color: var(--text); }
+    .btn-save {
+      padding: 10px 28px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      border: none; border-radius: var(--radius-sm); color: #fff;
+      font-family: 'Outfit', sans-serif; font-size: 13.5px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .btn-save:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(11,175,184,0.4); }
+    .btn-save:active { transform: translateY(0); }
+    .btn-save:disabled { opacity: 0.6; pointer-events: none; }
+
+    /* Toast */
+    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      padding: 12px 18px; border-radius: var(--radius-sm);
+      font-size: 13.5px; font-weight: 500; color: #fff;
+      box-shadow: var(--shadow-lg); min-width: 260px;
+      display: flex; align-items: center; gap: 10px;
+      animation: slideIn 0.3s ease;
+    }
+    .toast.success { background: var(--green); }
+    .toast.error { background: var(--red); }
+    .toast.info { background: var(--primary); }
+    @keyframes slideIn { from{transform:translateX(40px);opacity:0} to{transform:translateX(0);opacity:1} }
+    @keyframes slideOut { from{transform:translateX(0);opacity:1} to{transform:translateX(40px);opacity:0} }
+    .toast.out { animation: slideOut 0.3s ease forwards; }
+
+    /* ── HISTORY TAB ─────────────────────────── */
+    .history-toolbar {
+      display: flex; gap: 10px; align-items: center;
+      margin-bottom: 18px; flex-wrap: wrap;
+    }
+    .search-box {
+      flex: 1; min-width: 200px;
+      position: relative; display: flex; align-items: center;
+    }
+    .search-box svg { position: absolute; left: 12px; width: 15px; height: 15px; fill: var(--text3); }
+    .search-box input {
+      width: 100%; padding: 10px 14px 10px 36px;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-family: 'Outfit', sans-serif; font-size: 13.5px; color: var(--text);
+      background: var(--surface);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .search-box input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(11,175,184,0.12); }
+    .filter-select {
+      padding: 10px 13px;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-family: 'Outfit', sans-serif; font-size: 13.5px; color: var(--text2);
+      background: var(--surface); cursor: pointer;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238896AB' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px;
+    }
+    .filter-select:focus { outline: none; border-color: var(--accent); }
+    .btn-export {
+      padding: 10px 18px;
+      background: var(--green); border: none; border-radius: var(--radius-sm);
+      color: #fff; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+    }
+    .btn-export:hover { background: #047857; transform: translateY(-1px); }
+
+    /* Table */
+    .table-wrap {
+      background: var(--surface); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow); overflow: hidden;
+    }
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table thead { background: var(--surface2); }
+    .data-table th {
+      padding: 12px 14px; text-align: left;
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3);
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+      cursor: pointer; user-select: none;
+    }
+    .data-table th:hover { color: var(--primary); }
+    .data-table td {
+      padding: 11px 14px; font-size: 13px; color: var(--text);
+      border-bottom: 1px solid var(--border);
+      max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .data-table tbody tr { transition: background 0.15s; }
+    .data-table tbody tr:hover { background: #F0F7FF; }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .code-cell {
+      font-family: 'DM Mono', monospace; font-size: 12px;
+      background: var(--bg); border-radius: 4px;
+      padding: 2px 6px; color: var(--primary-light); font-weight: 500;
+    }
+    .empty-state {
+      text-align: center; padding: 48px 20px; color: var(--text3);
+    }
+    .empty-state svg { width: 44px; height: 44px; fill: var(--border2); margin-bottom: 12px; }
+    .empty-state h3 { font-size: 15px; color: var(--text2); font-weight: 600; margin-bottom: 6px; }
+    .empty-state p { font-size: 13px; }
+    .table-pagination {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-top: 1px solid var(--border);
+      font-size: 12.5px; color: var(--text2);
+    }
+    .page-btns { display: flex; gap: 4px; }
+    .page-btn {
+      padding: 5px 10px; border: 1px solid var(--border); border-radius: 5px;
+      background: var(--surface); cursor: pointer; font-size: 12px;
+      transition: all 0.15s; color: var(--text2);
+    }
+    .page-btn:hover { background: var(--bg); border-color: var(--accent); color: var(--primary); }
+    .page-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .page-btn:disabled { opacity: 0.4; pointer-events: none; }
+
+    /* ── JOB CODES TAB ───────────────────────── */
+    .jc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+    .jc-card {
+      background: var(--surface); border-radius: var(--radius);
+      box-shadow: var(--shadow-sm); border: 1.5px solid var(--border);
+      padding: 16px; transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    .jc-card:hover { box-shadow: var(--shadow); border-color: var(--accent); }
+    .jc-code { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--primary-light); margin-bottom: 6px; }
+    .jc-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .jc-dept { font-size: 12px; color: var(--text3); margin-bottom: 10px; }
+    .jc-count { font-size: 12px; font-weight: 600; color: var(--accent2); }
+    .jc-ts { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+    /* Loading overlay */
+    .loading-overlay {
+      position: fixed; inset: 0;
+      background: rgba(242,245,250,0.85);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 500;
+    }
+    .loading-overlay.hidden { display: none; }
+    .spinner {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 3px solid var(--border); border-top-color: var(--accent);
+      animation: spin 0.8s linear infinite; margin-bottom: 14px;
+    }
+    .loading-overlay p { font-size: 14px; color: var(--text2); font-weight: 500; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .app-content { padding: 16px; }
+      .form-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid .span2 { grid-column: span 2; }
+      .form-grid .span3 { grid-column: span 2; }
+      .form-grid .form-section-label { grid-column: span 2; }
+      .app-header { padding: 0 16px; }
+      .app-nav { padding: 0 16px; overflow-x: auto; }
+      .history-toolbar { flex-wrap: wrap; }
+    }
+    @media (max-width: 540px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid .span2 { grid-column: span 1; }
+      .form-grid .span3 { grid-column: span 1; }
+      .form-grid .form-section-label { grid-column: span 1; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── SETUP MODAL ────────────────────────────────── -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-card">
+    <div class="setup-header">
+      <h2>🔧 First-Time Setup</h2>
+      <p>Connect the tracker to a shared Google Sheet for multi-user sync</p>
+    </div>
+    <div class="setup-body">
+      <div class="setup-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>Create a Google Sheet</strong>
+          <p>Go to <a href="https://sheets.new" target="_blank">sheets.new</a>, name it <em>"TA Tracker"</em>, and share it with all TA specialists (Editor access).</p>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>Get your Sheet ID</strong>
+          <p>Copy the long ID from the URL:<br><code style="background:#F2F5FA;padding:2px 6px;border-radius:4px;font-size:11px;">docs.google.com/spreadsheets/d/<strong>[SHEET ID]</strong>/edit</code></p>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>Create OAuth Client ID</strong>
+          <p>In <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a>: enable <em>Sheets API</em>, create OAuth 2.0 credentials (Web app), add your page URL as an authorized origin. Copy the Client ID.</p>
+        </div>
+      </div>
+      <div class="setup-fields">
+        <div>
+          <label>Google OAuth Client ID</label>
+          <input type="text" id="setupClientId" placeholder="123456789-abc...apps.googleusercontent.com">
+        </div>
+        <div>
+          <label>Google Sheet ID</label>
+          <input type="text" id="setupSheetId" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
+        </div>
+      </div>
+    </div>
+    <div class="setup-footer">
+      <button class="btn-primary" onclick="saveSetupAndInit()">
+        Connect & Launch Tracker →
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LOADING ─────────────────────────────────────── -->
+<div class="loading-overlay hidden" id="loadingOverlay">
+  <div class="spinner"></div>
+  <p id="loadingMsg">Connecting to Google Sheets…</p>
+</div>
+
+<!-- ── MAIN APP ────────────────────────────────────── -->
+<div id="app">
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="app-logo">Amalga<span>TA</span></div>
+      <div class="header-badge">Candidate Tracker</div>
+    </div>
+    <div class="header-right">
+      <div class="sync-indicator">
+        <div class="sync-dot" id="syncDot"></div>
+        <span id="syncLabel">Synced</span>
+      </div>
+      <button class="btn-icon" onclick="loadRecords(true)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
+      <button class="btn-icon" onclick="resetConfig()">⚙ Settings</button>
+      <div class="user-chip" id="userChip">Not signed in</div>
+    </div>
+  </header>
+
+  <!-- Nav Tabs -->
+  <nav class="app-nav">
+    <div class="nav-tab active" onclick="switchTab('entry')">📝 New Entry</div>
+    <div class="nav-tab" onclick="switchTab('history')">
+      📋 History
+      <span class="record-count-badge" id="recordCountBadge">0</span>
+    </div>
+    <div class="nav-tab" onclick="switchTab('jobcodes')">🗂 Job Codes</div>
+    <div class="nav-spacer"></div>
+  </nav>
+
+  <!-- Content -->
+  <div class="app-content">
+
+    <!-- ── NEW ENTRY TAB ── -->
+    <div class="tab-panel active" id="tab-entry">
+      <div class="form-card">
+        <div class="form-card-header">
+          <div class="form-card-title">
+            <div class="icon"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+            New Candidate Entry
+          </div>
+        </div>
+        <div class="form-body">
+          <div class="form-grid">
+            <!-- TA Info -->
+            <div class="form-section-label">TA Specialist & Date</div>
+
+            <div class="field">
+              <label>TA Specialist <span class="req">*</span></label>
+              <select id="f_specialist">
+                <option value="">Select specialist…</option>
+                <option value="Alejandro Ramirez">Alejandro Ramirez</option>
+                <option value="Ximena Duk">Ximena Duk</option>
+                <option value="Salma Suarez">Salma Suarez</option>
+                <option value="Daniel Martinez">Daniel Martinez</option>
+                <option value="Alejandra Ramirez">Alejandra Ramirez</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Date <span class="req">*</span></label>
+              <input type="date" id="f_date">
+            </div>
+            <div class="field">
+              <label>Status</label>
+              <select id="f_status">
+                <option value="Active">🔵 Active</option>
+                <option value="Interview">🟡 Interview</option>
+                <option value="Hired">🟢 Hired</option>
+                <option value="Declined">🔴 Declined</option>
+                <option value="On Hold">⚪ On Hold</option>
+              </select>
+            </div>
+
+            <!-- Job Info -->
+            <div class="form-section-label">Job Information</div>
+
+            <div class="field" id="wrap_jobcode">
+              <label>Job Code <span class="req">*</span></label>
+              <input type="text" id="f_jobcode" placeholder="e.g. JP-2024-001" autocomplete="off" oninput="acInput(this,'jobcode')" onblur="acBlur('jobcode')" onkeydown="acKey(event,'jobcode')">
+              <div class="autocomplete-list hidden" id="ac_jobcode"></div>
+            </div>
+            <div class="field span2">
+              <label>Job Title <span class="req">*</span></label>
+              <input type="text" id="f_jobtitle" placeholder="e.g. Customer Support Representative">
+            </div>
+            <div class="field span3">
+              <label>Client / Department <span class="req">*</span></label>
+              <input type="text" id="f_client" placeholder="e.g. Gemini Operations / HR" autocomplete="off" oninput="acInput(this,'client')" onblur="acBlur('client')" onkeydown="acKey(event,'client')">
+              <div class="autocomplete-list hidden" id="ac_client"></div>
+            </div>
+
+            <!-- Candidate Info -->
+            <div class="form-section-label">Candidate Information</div>
+
+            <div class="field span2">
+              <label>Candidate Full Name <span class="req">*</span></label>
+              <input type="text" id="f_candidate" placeholder="First and last name">
+            </div>
+            <div class="field">
+              <label>Mobile Number</label>
+              <input type="tel" id="f_mobile" placeholder="+52 81 1234 5678">
+            </div>
+
+            <div class="field">
+              <label>Country <span class="req">*</span></label>
+              <input type="text" id="f_country" placeholder="e.g. Mexico" autocomplete="off" oninput="acInput(this,'country')" onblur="acBlur('country')" onkeydown="acKey(event,'country')">
+              <div class="autocomplete-list hidden" id="ac_country"></div>
+            </div>
+            <div class="field">
+              <label>City</label>
+              <input type="text" id="f_city" placeholder="e.g. Monterrey">
+            </div>
+            <div class="field">
+              <label>State / Province</label>
+              <input type="text" id="f_state" placeholder="e.g. Nuevo León">
+            </div>
+
+            <!-- Source -->
+            <div class="form-section-label">Source & Notes</div>
+
+            <div class="field" id="wrap_source">
+              <label>Source <span class="req">*</span></label>
+              <input type="text" id="f_source" placeholder="e.g. LinkedIn" autocomplete="off" oninput="acInput(this,'source')" onblur="acBlur('source')" onkeydown="acKey(event,'source')">
+              <div class="autocomplete-list hidden" id="ac_source"></div>
+            </div>
+            <div class="field span2">
+              <label>Notes</label>
+              <input type="text" id="f_notes" placeholder="Any additional context…">
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-secondary" onclick="clearForm()">Clear Form</button>
+            <button class="btn-save" id="saveBtn" onclick="saveRecord()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Save Entry
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HISTORY TAB ── -->
+    <div class="tab-panel" id="tab-history">
+      <div class="history-toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm0 0l4.35 4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+          <input type="text" id="searchInput" placeholder="Search by candidate, job code, or specialist…" oninput="filterHistory()">
+        </div>
+        <select class="filter-select" id="filterSpecialist" onchange="filterHistory()">
+          <option value="">All Specialists</option>
+          <option value="Alejandro Ramirez">Alejandro Ramirez</option>
+          <option value="Ximena Duk">Ximena Duk</option>
+          <option value="Salma Suarez">Salma Suarez</option>
+          <option value="Daniel Martinez">Daniel Martinez</option>
+          <option value="Alejandra Ramirez">Alejandra Ramirez</option>
+        </select>
+        <select class="filter-select" id="filterStatus" onchange="filterHistory()">
+          <option value="">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Interview">Interview</option>
+          <option value="Hired">Hired</option>
+          <option value="Declined">Declined</option>
+          <option value="On Hold">On Hold</option>
+        </select>
+        <button class="btn-export" onclick="exportToExcel()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Excel
+        </button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable('date')">Date ↕</th>
+              <th onclick="sortTable('specialist')">Specialist ↕</th>
+              <th onclick="sortTable('jobcode')">Job Code ↕</th>
+              <th onclick="sortTable('jobtitle')">Job Title ↕</th>
+              <th>Client / Dept.</th>
+              <th onclick="sortTable('candidate')">Candidate ↕</th>
+              <th>Mobile</th>
+              <th>Location</th>
+              <th onclick="sortTable('source')">Source ↕</th>
+              <th onclick="sortTable('status')">Status ↕</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td colspan="11"><div class="empty-state"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><h3>No records yet</h3><p>Save your first candidate entry to see history here.</p></div></td></tr>
+          </tbody>
+        </table>
+        <div class="table-pagination">
+          <span id="pageInfo">0 records</span>
+          <div class="page-btns" id="pageBtns"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── JOB CODES TAB ── -->
+    <div class="tab-panel" id="tab-jobcodes">
+      <div class="history-toolbar" style="margin-bottom:18px">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm0 0l4.35 4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+          <input type="text" id="jcSearch" placeholder="Filter job codes…" oninput="renderJobCodes()">
+        </div>
+      </div>
+      <div class="jc-grid" id="jcGrid">
+        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">No job codes loaded yet.</div>
+      </div>
+    </div>
+
+  </div><!-- /app-content -->
+</div><!-- /app -->
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+/* ════════════════════════════════════════════
+   CONFIG & STATE
+════════════════════════════════════════════ */
+let CONFIG = {
+  clientId: '',
+  sheetId: '',
+  sheetName: 'TA_Records'
+};
+
+const HEADERS = ['ID','Timestamp','Specialist','Job Code','Job Title','Client/Dept','Candidate','Mobile','Country','City','State','Source','Status','Notes'];
+const SHEET_RANGE = `${CONFIG.sheetName}!A:N`;
+
+let accessToken = null;
+let tokenExpiry = 0;
+let allRecords = [];
+let filteredRecords = [];
+let currentPage = 1;
+const PAGE_SIZE = 20;
+let sortCol = 'date';
+let sortDir = -1;
+let syncTimer = null;
+let tokenClient = null;
+
+// Autocomplete data
+const AC_DATA = {
+  source: ['LinkedIn','Facebook','Referral','Indeed','Glassdoor','OCC Mundial','Computrabajo','ZipRecruiter','Job Fair','University','Internal','WhatsApp'],
+  country: ['Mexico','United States','Colombia','Argentina','Brazil','Chile','Peru','Guatemala','Honduras','El Salvador','Costa Rica','Panama','Dominican Republic','Ecuador','Bolivia','Paraguay','Uruguay','Venezuela'],
+  jobcode: [],
+  client: []
+};
+let acSelected = {};
+
+/* ════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  // Load saved config
+  const saved = localStorage.getItem('ta_config');
+  if (saved) {
+    try {
+      const c = JSON.parse(saved);
+      if (c.clientId && c.sheetId) {
+        CONFIG = { ...CONFIG, ...c };
+        document.getElementById('setupOverlay').classList.add('hidden');
+        initGIS();
+        return;
+      }
+    } catch(e) {}
+  }
+  // Show setup
+  document.getElementById('setupOverlay').classList.remove('hidden');
+});
+
+function saveSetupAndInit() {
+  const cid = document.getElementById('setupClientId').value.trim();
+  const sid = document.getElementById('setupSheetId').value.trim();
+  if (!cid || !sid) { showToast('Please fill in both Client ID and Sheet ID.','error'); return; }
+  CONFIG.clientId = cid;
+  CONFIG.sheetId = sid;
+  localStorage.setItem('ta_config', JSON.stringify(CONFIG));
+  document.getElementById('setupOverlay').classList.add('hidden');
+  initGIS();
+}
+
+function resetConfig() {
+  if (!confirm('Reset configuration? You will need to re-enter your Client ID and Sheet ID.')) return;
+  localStorage.removeItem('ta_config');
+  location.reload();
+}
+
+function initGIS() {
+  // Wait for GIS to load
+  const waitGIS = setInterval(() => {
+    if (window.google && google.accounts) {
+      clearInterval(waitGIS);
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CONFIG.clientId,
+        scope: 'https://www.googleapis.com/auth/spreadsheets',
+        callback: handleToken
+      });
+      // Try silent sign-in first
+      requestToken();
+    }
+  }, 200);
+}
+
+function requestToken() {
+  setLoading(true, 'Signing in with Google…');
+  if (tokenClient) {
+    tokenClient.requestAccessToken({ prompt: '' });
+  }
+}
+
+async function handleToken(resp) {
+  if (resp.error) {
+    setLoading(false);
+    showToast('Sign-in failed: ' + resp.error, 'error');
+    // Show app anyway for demo
+    launchApp();
+    return;
+  }
+  accessToken = resp.access_token;
+  tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+  // Try to get user info
+  try {
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    const u = await r.json();
+    document.getElementById('userChip').textContent = u.name || u.email || 'Signed In';
+  } catch(e) {}
+  await ensureSheetHeaders();
+  await loadRecords(false);
+  launchApp();
+}
+
+function launchApp() {
+  setLoading(false);
+  document.getElementById('app').classList.add('ready');
+  // Set today's date
+  document.getElementById('f_date').value = new Date().toISOString().slice(0,10);
+  // Auto-sync every 45s
+  if (syncTimer) clearInterval(syncTimer);
+  syncTimer = setInterval(() => loadRecords(false), 45000);
+}
+
+/* ════════════════════════════════════════════
+   GOOGLE SHEETS API
+════════════════════════════════════════════ */
+function getRange() { return `${CONFIG.sheetName}!A:N`; }
+
+async function ensureSheetHeaders() {
+  if (!accessToken) return;
+  try {
+    const r = await sheetsGet(`${CONFIG.sheetName}!A1:N1`);
+    const vals = r.values;
+    if (!vals || !vals[0] || vals[0][0] !== 'ID') {
+      await sheetsAppend(`${CONFIG.sheetName}!A:N`, [HEADERS]);
+    }
+  } catch(e) {
+    // Sheet tab may not exist — create it
+    try { await createSheetTab(); } catch(e2) {}
+    await sheetsAppend(`${CONFIG.sheetName}!A:N`, [HEADERS]);
+  }
+}
+
+async function createSheetTab() {
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.sheetId}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests: [{ addSheet: { properties: { title: CONFIG.sheetName } } }] })
+  });
+}
+
+async function sheetsGet(range) {
+  const r = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.sheetId}/values/${encodeURIComponent(range)}`,
+    { headers: { Authorization: 'Bearer ' + accessToken } }
+  );
+  if (!r.ok) throw new Error('Sheets GET failed: ' + r.status);
+  return r.json();
+}
+
+async function sheetsAppend(range, values) {
+  const r = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.sheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+    {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values })
+    }
+  );
+  if (!r.ok) throw new Error('Sheets APPEND failed: ' + r.status);
+  return r.json();
+}
+
+async function loadRecords(showFeedback = true) {
+  if (!accessToken) return;
+  setSyncState('syncing');
+  if (showFeedback) setLoading(true, 'Loading records…');
+  try {
+    const data = await sheetsGet(`${CONFIG.sheetName}!A:N`);
+    const rows = data.values || [];
+    // Skip header row (row 0)
+    allRecords = rows.slice(1).map(r => ({
+      id:         r[0]  || '',
+      timestamp:  r[1]  || '',
+      specialist: r[2]  || '',
+      jobcode:    r[3]  || '',
+      jobtitle:   r[4]  || '',
+      client:     r[5]  || '',
+      candidate:  r[6]  || '',
+      mobile:     r[7]  || '',
+      country:    r[8]  || '',
+      city:       r[9]  || '',
+      state:      r[10] || '',
+      source:     r[11] || '',
+      status:     r[12] || '',
+      notes:      r[13] || ''
+    })).filter(r => r.candidate || r.jobcode);
+
+    buildAutocompleteData();
+    filterHistory();
+    renderJobCodes();
+    document.getElementById('recordCountBadge').textContent = allRecords.length;
+    setSyncState('ok');
+    if (showFeedback) showToast('Records synced: ' + allRecords.length + ' entries', 'info');
+  } catch(e) {
+    setSyncState('error');
+    if (showFeedback) showToast('Sync error: ' + e.message, 'error');
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function saveRecord() {
+  // Validate
+  const required = {
+    f_specialist: 'TA Specialist',
+    f_date: 'Date',
+    f_jobcode: 'Job Code',
+    f_jobtitle: 'Job Title',
+    f_client: 'Client / Department',
+    f_candidate: 'Candidate Name',
+    f_source: 'Source'
+  };
+  for (const [id, label] of Object.entries(required)) {
+    if (!document.getElementById(id).value.trim()) {
+      showToast(`Please fill in: ${label}`, 'error');
+      document.getElementById(id).focus();
+      return;
+    }
+  }
+  if (!accessToken) {
+    showToast('Not connected to Google Sheets. Check your setup.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  const row = [
+    genId(),
+    new Date().toISOString(),
+    document.getElementById('f_specialist').value,
+    document.getElementById('f_jobcode').value.trim().toUpperCase(),
+    document.getElementById('f_jobtitle').value.trim(),
+    document.getElementById('f_client').value.trim(),
+    document.getElementById('f_candidate').value.trim(),
+    document.getElementById('f_mobile').value.trim(),
+    document.getElementById('f_country').value.trim(),
+    document.getElementById('f_city').value.trim(),
+    document.getElementById('f_state').value.trim(),
+    document.getElementById('f_source').value.trim(),
+    document.getElementById('f_status').value,
+    document.getElementById('f_notes').value.trim()
+  ];
+
+  try {
+    await sheetsAppend(`${CONFIG.sheetName}!A:N`, [row]);
+    showToast('Entry saved successfully!', 'success');
+    clearForm();
+    await loadRecords(false);
+    switchTab('history');
+  } catch(e) {
+    showToast('Save failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Entry';
+  }
+}
+
+/* ════════════════════════════════════════════
+   AUTOCOMPLETE
+════════════════════════════════════════════ */
+function buildAutocompleteData() {
+  const codes = [...new Set(allRecords.map(r => r.jobcode).filter(Boolean))];
+  const clients = [...new Set(allRecords.map(r => r.client).filter(Boolean))];
+  const sources = [...new Set([...AC_DATA.source, ...allRecords.map(r => r.source).filter(Boolean)])];
+  const countries = [...new Set([...AC_DATA.country, ...allRecords.map(r => r.country).filter(Boolean)])];
+  AC_DATA.jobcode = codes;
+  AC_DATA.client = clients;
+  AC_DATA.source = [...new Set(sources)];
+  AC_DATA.country = [...new Set(countries)];
+}
+
+function acInput(input, key) {
+  const val = input.value;
+  const list = document.getElementById('ac_' + key);
+  if (!val || val.length < 1) { list.classList.add('hidden'); return; }
+
+  // Auto-fill job title and client when job code is selected
+  if (key === 'jobcode') {
+    const match = allRecords.find(r => r.jobcode.toLowerCase() === val.toLowerCase());
+    if (match) {
+      document.getElementById('f_jobtitle').value = match.jobtitle;
+      document.getElementById('f_client').value = match.client;
+    }
+  }
+
+  const q = val.toLowerCase();
+  const matches = (AC_DATA[key] || []).filter(s => s.toLowerCase().includes(q) && s.toLowerCase() !== q);
+  if (!matches.length) { list.classList.add('hidden'); return; }
+
+  list.innerHTML = matches.slice(0, 8).map((s, i) => {
+    const hi = s.replace(new RegExp('(' + escRx(val) + ')', 'gi'), '<mark>$1</mark>');
+    return `<div class="autocomplete-item" data-val="${s}" data-key="${key}" onmousedown="acSelect('${key}','${s.replace(/'/g,"\\'")}')"><span>${hi}</span></div>`;
+  }).join('');
+  list.classList.remove('hidden');
+  acSelected[key] = -1;
+}
+
+function acSelect(key, val) {
+  document.getElementById('f_' + (key === 'jobcode' ? 'jobcode' : key === 'client' ? 'client' : key === 'source' ? 'source' : key === 'country' ? 'country' : key)).value = val;
+  document.getElementById('ac_' + key).classList.add('hidden');
+  if (key === 'jobcode') {
+    const match = allRecords.find(r => r.jobcode.toLowerCase() === val.toLowerCase());
+    if (match) {
+      document.getElementById('f_jobtitle').value = match.jobtitle;
+      document.getElementById('f_client').value = match.client;
+    }
+  }
+}
+
+function acBlur(key) {
+  setTimeout(() => {
+    const list = document.getElementById('ac_' + key);
+    if (list) list.classList.add('hidden');
+  }, 200);
+}
+
+function acKey(e, key) {
+  const list = document.getElementById('ac_' + key);
+  const items = list.querySelectorAll('.autocomplete-item');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acSelected[key] = Math.min((acSelected[key] || -1) + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('selected', i === acSelected[key]));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acSelected[key] = Math.max((acSelected[key] || 0) - 1, 0);
+    items.forEach((el, i) => el.classList.toggle('selected', i === acSelected[key]));
+  } else if (e.key === 'Enter' && acSelected[key] >= 0) {
+    e.preventDefault();
+    acSelect(key, items[acSelected[key]].dataset.val);
+  } else if (e.key === 'Escape') {
+    list.classList.add('hidden');
+  }
+}
+
+function escRx(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+/* ════════════════════════════════════════════
+   HISTORY & FILTERING
+════════════════════════════════════════════ */
+function filterHistory() {
+  const q = (document.getElementById('searchInput').value || '').toLowerCase();
+  const sp = document.getElementById('filterSpecialist').value;
+  const st = document.getElementById('filterStatus').value;
+
+  filteredRecords = allRecords.filter(r => {
+    const matchQ = !q || [r.candidate, r.jobcode, r.jobtitle, r.specialist, r.client, r.source].some(v => v.toLowerCase().includes(q));
+    const matchSp = !sp || r.specialist === sp;
+    const matchSt = !st || r.status === st;
+    return matchQ && matchSp && matchSt;
+  });
+
+  // Sort
+  filteredRecords.sort((a, b) => {
+    const map = { date:'timestamp', specialist:'specialist', jobcode:'jobcode', jobtitle:'jobtitle', candidate:'candidate', source:'source', status:'status' };
+    const k = map[sortCol] || 'timestamp';
+    return (a[k] < b[k] ? -1 : a[k] > b[k] ? 1 : 0) * sortDir;
+  });
+
+  currentPage = 1;
+  renderHistoryTable();
+}
+
+function sortTable(col) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
+  filterHistory();
+}
+
+function renderHistoryTable() {
+  const body = document.getElementById('historyBody');
+  const total = filteredRecords.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const rows = filteredRecords.slice(start, start + PAGE_SIZE);
+
+  if (!rows.length) {
+    body.innerHTML = `<tr><td colspan="11"><div class="empty-state"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><h3>No records found</h3><p>Try adjusting your search or filters.</p></div></td></tr>`;
+    document.getElementById('pageInfo').textContent = '0 records';
+    document.getElementById('pageBtns').innerHTML = '';
+    return;
+  }
+
+  body.innerHTML = rows.map(r => {
+    const statusClass = { Active:'status-active', Interview:'status-interview', Hired:'status-hired', Declined:'status-declined', 'On Hold':'status-onhold' }[r.status] || 'status-active';
+    const date = r.timestamp ? new Date(r.timestamp).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : '—';
+    const loc = [r.city, r.state, r.country].filter(Boolean).join(', ') || '—';
+    return `<tr>
+      <td title="${r.timestamp}">${date}</td>
+      <td title="${r.specialist}">${r.specialist}</td>
+      <td><span class="code-cell">${r.jobcode || '—'}</span></td>
+      <td title="${r.jobtitle}">${r.jobtitle || '—'}</td>
+      <td title="${r.client}">${r.client || '—'}</td>
+      <td title="${r.candidate}"><strong>${r.candidate || '—'}</strong></td>
+      <td title="${r.mobile}">${r.mobile || '—'}</td>
+      <td title="${loc}">${loc}</td>
+      <td title="${r.source}">${r.source || '—'}</td>
+      <td><span class="status-pill ${statusClass}">${r.status || 'Active'}</span></td>
+      <td title="${r.notes}" style="color:var(--text2)">${r.notes || '—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('pageInfo').textContent = `Showing ${start+1}–${Math.min(start+PAGE_SIZE, total)} of ${total} records`;
+
+  // Pagination
+  const pb = document.getElementById('pageBtns');
+  let html = `<button class="page-btn" ${currentPage===1?'disabled':''} onclick="goPage(${currentPage-1})">‹</button>`;
+  for (let p = 1; p <= totalPages; p++) {
+    if (totalPages > 7 && p > 2 && p < totalPages - 1 && Math.abs(p - currentPage) > 1) {
+      if (p === 3 || p === totalPages - 2) html += `<button class="page-btn" disabled>…</button>`;
+      continue;
+    }
+    html += `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  html += `<button class="page-btn" ${currentPage===totalPages?'disabled':''} onclick="goPage(${currentPage+1})">›</button>`;
+  pb.innerHTML = html;
+}
+
+function goPage(p) { currentPage = p; renderHistoryTable(); }
+
+/* ════════════════════════════════════════════
+   JOB CODES TAB
+════════════════════════════════════════════ */
+function renderJobCodes() {
+  const q = (document.getElementById('jcSearch').value || '').toLowerCase();
+  const map = {};
+  allRecords.forEach(r => {
+    if (!r.jobcode) return;
+    if (!map[r.jobcode]) {
+      map[r.jobcode] = { code: r.jobcode, title: r.jobtitle, client: r.client, count: 0, latest: r.timestamp };
+    }
+    map[r.jobcode].count++;
+    if (r.timestamp > map[r.jobcode].latest) map[r.jobcode].latest = r.timestamp;
+  });
+
+  let codes = Object.values(map).sort((a,b) => b.count - a.count);
+  if (q) codes = codes.filter(c => c.code.toLowerCase().includes(q) || c.title.toLowerCase().includes(q));
+
+  const grid = document.getElementById('jcGrid');
+  if (!codes.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">No job codes found.</div>`;
+    return;
+  }
+  grid.innerHTML = codes.map(c => `
+    <div class="jc-card" onclick="filterByCode('${c.code.replace(/'/g,"\\'")}')">
+      <div class="jc-code">${c.code}</div>
+      <div class="jc-title">${c.title || '—'}</div>
+      <div class="jc-dept">${c.client || '—'}</div>
+      <div class="jc-count">${c.count} candidate${c.count!==1?'s':''}</div>
+      ${c.latest ? `<div class="jc-ts">Last: ${new Date(c.latest).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function filterByCode(code) {
+  document.getElementById('searchInput').value = code;
+  switchTab('history');
+  filterHistory();
+}
+
+/* ════════════════════════════════════════════
+   EXPORT
+════════════════════════════════════════════ */
+function exportToExcel() {
+  const data = filteredRecords.map(r => ({
+    'Date': r.timestamp ? new Date(r.timestamp).toLocaleDateString() : '',
+    'Specialist': r.specialist,
+    'Job Code': r.jobcode,
+    'Job Title': r.jobtitle,
+    'Client/Dept': r.client,
+    'Candidate': r.candidate,
+    'Mobile': r.mobile,
+    'Country': r.country,
+    'City': r.city,
+    'State': r.state,
+    'Source': r.source,
+    'Status': r.status,
+    'Notes': r.notes
+  }));
+
+  if (!data.length) { showToast('No records to export.', 'error'); return; }
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  // Column widths
+  ws['!cols'] = [12,20,12,28,22,24,16,14,14,16,14,12,24].map(w=>({wch:w}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'TA Candidates');
+  const fname = `TA_Tracker_${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  showToast('Exported ' + data.length + ' records to Excel', 'success');
+}
+
+/* ════════════════════════════════════════════
+   UI HELPERS
+════════════════════════════════════════════ */
+function switchTab(id) {
+  document.querySelectorAll('.nav-tab').forEach((t, i) => {
+    const ids = ['entry','history','jobcodes'];
+    t.classList.toggle('active', ids[i] === id);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'tab-' + id);
+  });
+  if (id === 'history') filterHistory();
+  if (id === 'jobcodes') renderJobCodes();
+}
+
+function clearForm() {
+  ['f_specialist','f_date','f_jobcode','f_jobtitle','f_client','f_candidate','f_mobile','f_country','f_city','f_state','f_source','f_notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el.tagName === 'SELECT') el.selectedIndex = 0;
+    else el.value = '';
+  });
+  document.getElementById('f_date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('f_status').value = 'Active';
+  // Hide all ac lists
+  document.querySelectorAll('.autocomplete-list').forEach(l => l.classList.add('hidden'));
+}
+
+function setSyncState(state) {
+  const dot = document.getElementById('syncDot');
+  const label = document.getElementById('syncLabel');
+  dot.className = 'sync-dot';
+  if (state === 'syncing') { dot.classList.add('syncing'); label.textContent = 'Syncing…'; }
+  else if (state === 'error') { dot.classList.add('error'); label.textContent = 'Sync error'; }
+  else { label.textContent = 'Synced · ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
+}
+
+function setLoading(show, msg = '') {
+  const el = document.getElementById('loadingOverlay');
+  el.classList.toggle('hidden', !show);
+  if (msg) document.getElementById('loadingMsg').textContent = msg;
+}
+
+function showToast(msg, type = 'info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  const icons = { success:'✓', error:'✕', info:'ℹ' };
+  t.innerHTML = `<span style="font-size:15px">${icons[type]||'ℹ'}</span> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, 3500);
+}
+
+function genId() {
+  return 'TA-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2,5).toUpperCase();
+}
+
+// Close autocomplete on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.field')) {
+    document.querySelectorAll('.autocomplete-list').forEach(l => l.classList.add('hidden'));
+  }
+});
+</script>
+</body>
+</html>
